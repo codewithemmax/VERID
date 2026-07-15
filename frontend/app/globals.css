@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-body antialiased;
+    background-image:
+      radial-gradient(60rem 60rem at 8% -10%, rgba(109, 59, 245, 0.08), transparent 60%),
+      radial-gradient(50rem 50rem at 105% 0%, rgba(226, 44, 139, 0.08), transparent 55%),
+      radial-gradient(40rem 40rem at 50% 120%, rgba(18, 181, 201, 0.07), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* A confident, sticker-like tag used across the marketplace. */
+  .mk-tag {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+  }
+}

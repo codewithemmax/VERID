@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install --prefix \"c:\\\\Users\\\\OLL\\\\Documents\\\\Verid\\\\frontend\" 2>&1)"
+    ]
+  }
+}
