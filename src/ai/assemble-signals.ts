@@ -9,14 +9,11 @@
 
 import type { AnalyzeRequest, SignalInput } from '../../../shared/types';
 import type { ModelSignals } from './schema';
-import { computePriceDeviationRatio, computeReviewBurstRatio } from './computed-signals';
 
 export function assembleSignals(
   req: AnalyzeRequest,
   modelSignals: ModelSignals | null
 ): SignalInput {
-  const priceRatio = computePriceDeviationRatio(req);
-
   return {
     // Layer 1 — Account (from request, no AI)
     sellerAccountAgeDays: req.sellerAccountAgeDays,

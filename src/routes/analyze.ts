@@ -1,6 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { DEGRADED_RESPONSE } from '../../../shared/types';
+import { extractSignals } from '../ai/groq-client';
+import { assembleSignals } from '../ai/assemble-signals';
+import { scoreListing } from '../scoring/score-listing';
+import { buildExplanation } from '../ai/build-explanation';
+import { logVerdict } from '../db/log-verdict';
 
 const ReviewSchema = z.object({
   body: z.string(),
@@ -23,7 +28,7 @@ export const AnalyzeRequestSchema = z.object({
 
 const router = Router();
 
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const parsed = AnalyzeRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -32,8 +37,21 @@ router.post('/', (req: Request, res: Response) => {
     return;
   }
 
-  // Stub — wired fully in Phase 3 (B3.1)
-  res.json(DEGRADED_RESPONSE);
+  const analyzeReq = parsed.data;
+
+  try {
+    const { signals: modelSignals } = await extractSignals(analyzeReq);
+    const signalInput = assembleSignals(analyzeReq, modelSignals);
+    const verdict = scoreListing(signalInput);
+    verdict.explanation = buildExplanation(verdict.band, verdict.signals);
+
+    logVerdict(verdict, signalInput); // fire-and-forget, never awaited
+
+    res.json(verdict);
+  } catch {
+    // Should not reach here — extractSignals never throws — but belt-and-suspenders.
+    res.json(DEGRADED_RESPONSE);
+  }
 });
 
 export default router;
