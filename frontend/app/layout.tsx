@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthProvider";
 
 // Marketplace typefaces. Deliberately NOT Space Grotesk / DM Sans — those two
 // belong to the Verid overlay alone and are its visual tell (see ui-context.md).
@@ -28,7 +29,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

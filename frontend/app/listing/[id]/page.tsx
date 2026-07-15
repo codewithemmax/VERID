@@ -7,11 +7,10 @@ import { SellerCard } from "@/components/marketplace/SellerCard";
 import { ReviewSection } from "@/components/marketplace/ReviewSection";
 import { BuyButton } from "@/components/marketplace/BuyButton";
 import { VeridProvider } from "@/context/VeridProvider";
-import { SEED_LISTINGS, getListingById } from "@/lib/seed-listings";
+import { getListingById } from "@/lib/listings";
 
-export function generateStaticParams() {
-  return SEED_LISTINGS.map((listing) => ({ id: listing.id }));
-}
+// Listings are live DB rows — render per request.
+export const dynamic = "force-dynamic";
 
 export default async function ListingPage({
   params,
@@ -19,7 +18,7 @@ export default async function ListingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const listing = getListingById(id);
+  const listing = await getListingById(id);
   if (!listing) notFound();
 
   return (

@@ -1,4 +1,6 @@
-import type { AnalyzeRequest } from "@shared/types";
+// Relative import (not the "@/" alias) so this file also resolves when the seed
+// script runs it under tsx, which does not read tsconfig path aliases.
+import type { Listing, ListingReview, Band } from "./types";
 
 /**
  * F1.2 — Seed listings.
@@ -25,24 +27,12 @@ import type { AnalyzeRequest } from "@shared/types";
 
 /** Display-only review. `author` is stripped before anything reaches the
  *  AnalyzeRequest payload — it is PII and is absent from the API contract. */
-export interface SeedReview {
-  author: string;
-  body: string;
-  rating: number;
-  postedAt: string; // ISO 8601
-}
+export type SeedReview = ListingReview;
 
-export type Band = "clear" | "caution" | "block";
-
-export interface SeedListing extends Omit<AnalyzeRequest, "reviews"> {
-  id: string;
+/** A seed is just a Listing with two extra fields used by the seed script and
+ *  for documentation. Both the DB rows and these seeds satisfy `Listing`. */
+export interface SeedListing extends Listing {
   slug: string;
-  sellerName: string;
-  category: string;
-  condition: string;
-  subtitle: string;
-  location: string;
-  reviews: SeedReview[];
   /** Reference only — the real band comes from the backend at runtime. */
   expectedBand: Band;
 }
@@ -268,6 +258,54 @@ export const SEED_LISTINGS: SeedListing[] = [
   blockListing,
 ];
 
-export function getListingById(id: string): SeedListing | undefined {
-  return SEED_LISTINGS.find((listing) => listing.id === id);
+/**
+ * Demo seller accounts that own the seed listings. `accountAgeDays` back-dates
+ * the profile's created_at so the crafted account ages hold; rating/reviewCount/
+ * verified are the reputation values the band math assumes. The seed script
+ * (scripts/seed.ts) creates these auth users and profiles, then inserts each
+ * listing above under the matching seller. `listingId` maps a seller to their
+ * listing by the listing's `id`.
+ */
+export interface SeedSeller {
+  email: string;
+  password: string;
+  displayName: string;
+  accountAgeDays: number;
+  rating: number | null;
+  reviewCount: number;
+  verified: boolean;
+  listingId: string;
 }
+
+export const SEED_SELLERS: SeedSeller[] = [
+  {
+    email: "nkechi.textiles@kora.demo",
+    password: "kora-demo-clean-01",
+    displayName: cleanListing.sellerName,
+    accountAgeDays: cleanListing.sellerAccountAgeDays,
+    rating: cleanListing.sellerRating,
+    reviewCount: cleanListing.sellerReviewCount,
+    verified: cleanListing.sellerVerified,
+    listingId: cleanListing.id,
+  },
+  {
+    email: "urban.finds@kora.demo",
+    password: "kora-demo-caution-01",
+    displayName: cautionListing.sellerName,
+    accountAgeDays: cautionListing.sellerAccountAgeDays,
+    rating: cautionListing.sellerRating,
+    reviewCount: cautionListing.sellerReviewCount,
+    verified: cautionListing.sellerVerified,
+    listingId: cautionListing.id,
+  },
+  {
+    email: "deals.plug@kora.demo",
+    password: "kora-demo-block-01",
+    displayName: blockListing.sellerName,
+    accountAgeDays: blockListing.sellerAccountAgeDays,
+    rating: blockListing.sellerRating,
+    reviewCount: blockListing.sellerReviewCount,
+    verified: blockListing.sellerVerified,
+    listingId: blockListing.id,
+  },
+];

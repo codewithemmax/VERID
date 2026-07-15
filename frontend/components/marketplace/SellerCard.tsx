@@ -1,4 +1,4 @@
-import type { SeedListing } from "@/lib/seed-listings";
+import type { Listing } from "@/lib/types";
 import { formatAccountAge } from "@/lib/format";
 import { Stars } from "./Stars";
 
@@ -12,7 +12,7 @@ import { Stars } from "./Stars";
  * target list because `sellerVerified` is part of the AnalyzeRequest contract
  * but has no other natural DOM home.
  */
-export function SellerCard({ listing }: { listing: SeedListing }) {
+export function SellerCard({ listing }: { listing: Listing }) {
   const initial = listing.sellerName.charAt(0).toUpperCase();
 
   return (

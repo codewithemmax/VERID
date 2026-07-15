@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(npm install --prefix \"c:\\\\Users\\\\OLL\\\\Documents\\\\Verid\\\\frontend\" 2>&1)"
+      "PowerShell(npm install --prefix \"c:\\\\Users\\\\OLL\\\\Documents\\\\Verid\\\\frontend\" 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\OLL\\\\Documents\\\\Verid\\\\frontend\"; npm install @supabase/supabase-js@^2.45.0 tsx@^4.19.0 2>&1 | Tee-Object -FilePath \"$env:TEMP\\\\verid_supa_install.log\" | Select-Object -Last 6)"
     ]
   }
 }

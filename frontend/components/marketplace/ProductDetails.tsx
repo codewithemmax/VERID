@@ -1,4 +1,4 @@
-import type { SeedListing } from "@/lib/seed-listings";
+import type { Listing } from "@/lib/types";
 import { formatNaira } from "@/lib/format";
 
 /**
@@ -10,7 +10,7 @@ import { formatNaira } from "@/lib/format";
  * separators, and so `categoryMedianPrice` has a DOM source. The overlay never
  * imports this data — it re-reads the DOM.
  */
-export function ProductDetails({ listing }: { listing: SeedListing }) {
+export function ProductDetails({ listing }: { listing: Listing }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">

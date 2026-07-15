@@ -1,4 +1,4 @@
-import type { SeedReview } from "@/lib/seed-listings";
+import type { ListingReview } from "@/lib/types";
 import { formatReviewDate } from "@/lib/format";
 import { Stars } from "./Stars";
 
@@ -12,7 +12,7 @@ import { Stars } from "./Stars";
  * verid marker, so F2.1 reads body/rating/date and never touches the name. This
  * is the DOM-level guarantee behind the "we store no PII" pitch.
  */
-export function ReviewSection({ reviews }: { reviews: SeedReview[] }) {
+export function ReviewSection({ reviews }: { reviews: ListingReview[] }) {
   return (
     <section className="mt-10">
       <div className="flex items-baseline justify-between">
