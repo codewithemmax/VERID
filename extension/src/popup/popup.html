@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verid</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 380px;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      color: #0F172A;
+      background: #FFFFFF;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: #2563EB;
+      color: #FFFFFF;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.3);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 200ms;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      transition: transform 200ms;
+    }
+
+    .toggle input:checked + .toggle-slider { background: rgba(255,255,255,0.6); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Body */
+    .body { padding: 16px; }
+
+    .site-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    /* Verdict card */
+    .verdict-card {
+      background: #F0F4FF;
+      border: 1.5px solid #C7D7FD;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .verdict-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .score-num {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .score-num.clear   { color: #16A34A; }
+    .score-num.caution { color: #D97706; }
+    .score-num.block   { color: #DC2626; }
+    .score-num.unknown { color: #94A3B8; }
+
+    .band-label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .band-label.clear   { color: #16A34A; }
+    .band-label.caution { color: #D97706; }
+    .band-label.block   { color: #DC2626; }
+    .band-label.unknown { color: #94A3B8; }
+
+    .signals-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .signals-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 12px;
+      color: #64748B;
+    }
+
+    .sig-dot {
+      flex-shrink: 0;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #2563EB;
+      margin-top: 5px;
+    }
+
+    .no-verdict {
+      font-size: 13px;
+      color: #94A3B8;
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    /* Scan button */
+    .scan-btn {
+      width: 100%;
+      padding: 11px;
+      background: #2563EB;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 150ms;
+    }
+
+    .scan-btn:hover { background: #1D4ED8; }
+    .scan-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .footer {
+      padding: 10px 16px;
+      border-top: 1px solid #E2E8F0;
+      font-size: 11px;
+      color: #94A3B8;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-brand">🛡 VERID</div>
+    <div class="toggle-wrap">
+      <span id="toggle-label">On</span>
+      <label class="toggle">
+        <input type="checkbox" id="enabled-toggle" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="site-label" id="site-label">Last scan</div>
+    <div id="verdict-area">
+      <div class="no-verdict">No scan yet — open a listing page.</div>
+    </div>
+    <button class="scan-btn" id="scan-btn">Scan this page</button>
+  </div>
+
+  <div class="footer">Verid · Fraud detection for online marketplaces</div>
+  <script src="popup.js"></script>
+</body>
+</html>

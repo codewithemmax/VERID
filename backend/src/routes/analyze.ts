@@ -10,20 +10,22 @@ import { logVerdict } from '../db/log-verdict';
 const ReviewSchema = z.object({
   body: z.string(),
   rating: z.number().min(1).max(5),
-  postedAt: z.string(),
+  postedAt: z.string().default(''),   // timestamps not always available on real pages
 });
 
 export const AnalyzeRequestSchema = z.object({
   title: z.string(),
-  price: z.number().int(),
-  categoryMedianPrice: z.number(),
+  price: z.number(),
+  categoryMedianPrice: z.number().default(0),      // unavailable on real pages — pass 0
   description: z.string(),
-  sellerAccountAgeDays: z.number().int(),
-  sellerRating: z.number().min(0).max(5).nullable(),
-  sellerReviewCount: z.number().int(),
-  sellerVerified: z.boolean(),
-  images: z.array(z.string().url()),
-  reviews: z.array(ReviewSchema),
+  sellerAccountAgeDays: z.number().int().default(0), // unavailable on real pages — pass 0
+  sellerRating: z.number().min(0).max(5).nullable().default(null),
+  sellerReviewCount: z.number().int().default(0),
+  sellerVerified: z.boolean().default(false),
+  sellerHasStorePage: z.boolean().default(true),
+  sellerListingCount: z.number().int().default(0),
+  images: z.array(z.string()).default([]),          // data URLs allowed (screenshots)
+  reviews: z.array(ReviewSchema).default([]),
 });
 
 const router = Router();

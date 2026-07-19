@@ -1,30 +1,31 @@
 export interface AnalyzeRequest {
   title: string;
   price: number;
-  categoryMedianPrice: number;
+  categoryMedianPrice: number;   // pass 0 when unavailable
   description: string;
-  sellerAccountAgeDays: number;
+  sellerAccountAgeDays: number;  // pass 0 when unavailable
   sellerRating: number | null;
   sellerReviewCount: number;
   sellerVerified: boolean;
+  sellerHasStorePage: boolean;   // false = no_seller_store fires
+  sellerListingCount: number;    // <=1 = single_listing_seller fires
   images: string[];
   reviews: {
     body: string;
     rating: number;
-    postedAt: string;
+    postedAt: string;            // ISO 8601 — empty string when unavailable
   }[];
 }
 
 export interface SignalInput {
-  // Layer 1 — Account (computed from request)
-  sellerAccountAgeDays: number;
+  // Layer 1 — Seller (from DOM, no AI)
   sellerReviewCount: number;
+  sellerHasStorePage: boolean;
+  sellerListingCount: number;
 
-  // Layer 2 — Listing (AI + computed)
+  // Layer 2 — Listing (AI-derived)
   offplatform_contact: boolean;
   image_synthetic_probability: number;
-  price: number;
-  categoryMedianPrice: number;
   urgency_score: number;
   description_specificity: number;
 

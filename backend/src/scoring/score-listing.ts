@@ -3,11 +3,15 @@ import { WEIGHTS, THRESHOLDS, MULTIPLIERS } from './weights';
 
 function reviewBurstFired(reviews: { postedAt: string }[]): boolean {
   if (reviews.length < 2) return false;
-  const times = reviews.map(r => new Date(r.postedAt).getTime()).sort((a, b) => a - b);
+  const times = reviews
+    .map(r => new Date(r.postedAt).getTime())
+    .filter(t => !isNaN(t))
+    .sort((a, b) => a - b);
+  if (times.length < 2) return false;
   const windowMs = THRESHOLDS.review_burst_window_hours * 60 * 60 * 1000;
   for (let i = 0; i < times.length; i++) {
     const inWindow = times.filter(t => t >= times[i] && t <= times[i] + windowMs).length;
-    if (inWindow / reviews.length > THRESHOLDS.review_burst_ratio) return true;
+    if (inWindow / times.length > THRESHOLDS.review_burst_ratio) return true;
   }
   return false;
 }
@@ -15,27 +19,25 @@ function reviewBurstFired(reviews: { postedAt: string }[]): boolean {
 export function scoreListing(signals: SignalInput): Verdict {
   const fired: Signal[] = [];
 
-  // Layer 1 — Account
-  if (signals.sellerAccountAgeDays < THRESHOLDS.new_account_days) {
-    fired.push({ label: `Seller account is ${signals.sellerAccountAgeDays} days old`, weight: WEIGHTS.new_account });
+  // Layer 1 — Seller (DOM-readable, no AI)
+  if (!signals.sellerHasStorePage) {
+    fired.push({ label: 'Seller has no store or profile page', weight: WEIGHTS.no_seller_store });
   }
-  if (signals.sellerReviewCount === 0 && signals.sellerAccountAgeDays < THRESHOLDS.no_history_days) {
+  if (signals.sellerListingCount <= 1) {
+    fired.push({ label: 'Seller has only one listing', weight: WEIGHTS.single_listing_seller });
+  }
+  if (signals.sellerReviewCount === 0) {
     fired.push({ label: 'Seller has no review history', weight: WEIGHTS.no_history });
   }
-
   const layer1Points = fired.reduce((s, f) => s + f.weight, 0);
 
-  // Layer 2 — Listing
+  // Layer 2 — Listing (AI-derived)
   const layer2Start = fired.length;
   if (signals.offplatform_contact) {
     fired.push({ label: 'Seller requests off-platform contact', weight: WEIGHTS.offplatform_contact });
   }
   if (signals.image_synthetic_probability > THRESHOLDS.image_synthetic_probability) {
     fired.push({ label: 'Product images appear to be stock or AI-generated', weight: WEIGHTS.image_synthetic });
-  }
-  const priceRatio = (signals.price - signals.categoryMedianPrice) / signals.categoryMedianPrice;
-  if (priceRatio < THRESHOLDS.price_anomaly_ratio) {
-    fired.push({ label: `Price is ${Math.round(Math.abs(priceRatio) * 100)}% below market rate`, weight: WEIGHTS.price_anomaly });
   }
   if (signals.urgency_score > THRESHOLDS.urgency_score) {
     fired.push({ label: 'Listing uses urgency language to pressure buyers', weight: WEIGHTS.urgency_language });
@@ -45,7 +47,7 @@ export function scoreListing(signals: SignalInput): Verdict {
   }
   const layer2Points = fired.slice(layer2Start).reduce((s, f) => s + f.weight, 0);
 
-  // Layer 3 — Reviews
+  // Layer 3 — Reviews (AI + computed)
   const layer3Start = fired.length;
   if (signals.review_template_similarity > THRESHOLDS.review_template_similarity) {
     fired.push({ label: 'Reviews appear templated or copy-pasted', weight: WEIGHTS.review_templating });
@@ -67,17 +69,28 @@ export function scoreListing(signals: SignalInput): Verdict {
   const rawSum = layer1Points + layer2Points + layer3Points;
   let score = Math.min(100, Math.round(rawSum * multiplier));
 
-  // Confidence — count resolvable signals (all signals we have data for)
-  const resolvable = 9; // all 9 signals are always evaluated from the input
-  const confidence: Verdict['confidence'] = resolvable >= THRESHOLDS.confidence_high ? 'high'
-    : resolvable >= THRESHOLDS.confidence_medium ? 'medium'
-    : 'low';
+  // Confidence — based on how many signal inputs were actually present
+  // Fields unavailable on real marketplace pages don't count against confidence
+  const resolvable = [
+    signals.sellerHasStorePage !== undefined,   // always present
+    signals.sellerListingCount !== undefined,    // always present
+    signals.sellerReviewCount !== undefined,     // always present
+    signals.offplatform_contact !== undefined,   // AI — always attempted
+    signals.image_synthetic_probability !== undefined,
+    signals.urgency_score !== undefined,
+    signals.description_specificity !== undefined,
+    signals.review_template_similarity !== undefined,
+    signals.review_product_mismatch !== undefined,
+  ].filter(Boolean).length;
+
+  const confidence: Verdict['confidence'] =
+    resolvable >= THRESHOLDS.confidence_high   ? 'high'   :
+    resolvable >= THRESHOLDS.confidence_medium ? 'medium' : 'low';
 
   if (confidence === 'low') score = Math.min(score, THRESHOLDS.low_confidence_score_cap);
 
-  const band: Verdict['band'] = score >= THRESHOLDS.band_block ? 'block'
-    : score >= THRESHOLDS.band_caution ? 'caution'
-    : 'clear';
+  const band: Verdict['band'] = score >= THRESHOLDS.band_block   ? 'block'  :
+                                 score >= THRESHOLDS.band_caution ? 'caution': 'clear';
 
   fired.sort((a, b) => b.weight - a.weight);
 
