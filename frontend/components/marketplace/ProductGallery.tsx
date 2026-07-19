@@ -35,8 +35,12 @@ export function ProductGallery({
 
       <figure className="relative overflow-hidden rounded-card bg-tint shadow-lift">
         <div className="aspect-square w-full">
-          {/* Presentational preview — intentionally NOT a data-verid-target. */}
+          {/* Main preview — carries the extraction target when there is only one
+              image (no thumbnails render). When multiple images exist the
+              thumbnails below carry the targets; this one is skipped to avoid
+              double-counting. */}
           <img
+            {...(safe.length === 1 ? { "data-verid-target": "images" } : {})}
             src={safe[active]}
             alt={title}
             className="h-full w-full object-cover"
