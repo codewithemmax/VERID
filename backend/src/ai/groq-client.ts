@@ -8,7 +8,13 @@ import { ModelSignalSchema, type ModelSignals } from './schema';
 import { buildAnalysisPrompt } from './prompts';
 import type { AnalyzeRequest } from '../../../shared/types';
 
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Defer client creation to first call so a missing key at module load
+// doesn't crash the server — it returns null signals (degraded path) instead.
+let _client: Groq | null = null;
+function getClient(): Groq {
+  if (!_client) _client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  return _client;
+}
 
 const VISION_MODEL = process.env.GROQ_MODEL_VISION ?? 'qwen/qwen3.6-27b';
 const TIMEOUT_MS = 4000;
@@ -34,7 +40,7 @@ export async function extractSignals(req: AnalyzeRequest): Promise<ModelCallResu
   }
 
   try {
-    const completion = await client.chat.completions.create(
+    const completion = await getClient().chat.completions.create(
       {
         model: VISION_MODEL,
         messages: [{ role: 'user', content: content as any }],

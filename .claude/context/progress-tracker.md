@@ -7,7 +7,7 @@
 
 ## Status
 
-Phase 1, 2, and 3 backend complete. All 5 scoring tests pass. Route fully wired. Ready for B3.3 deploy + README, then integration with Ashiah.
+Backend Phase 1–3 complete. Frontend Phase 1, 1B, and 2 complete. All 5 scoring tests pass. Ready for F3.1/F3.2 integration verification, then B3.3 deploy.
 
 ---
 
@@ -33,6 +33,16 @@ Phase 1, 2, and 3 backend complete. All 5 scoring tests pass. Route fully wired.
 - **Assembler done.** `src/ai/assemble-signals.ts` — `assembleSignals(req, modelSignals)` merges model output + computed signals + account fields into `SignalInput`. Neutral fallback values when model returns null (low-confidence path).
 - **B3.1 done.** Route fully wired: validate → `extractSignals()` → `assembleSignals()` → `scoreListing()` → `buildExplanation()` → fire-and-forget `logVerdict()` → respond. AI failure → degraded 200, never 503.
 - **B3.2 done.** `src/ai/build-explanation.ts` — plain-language sentence templated from fired signals. No second AI call.
+- **Frontend Phase 2 done (F2.1–F2.4 + wiring).**
+  - **F2.1:** `lib/extract-page-data.ts` — reads `data-verid-target` only, strips author names, returns typed `AnalyzeRequest`.
+  - **F2.2:** `components/verid/VeridBadge.tsx` — scanning pulse → clear shield / unknown dash. Space reserved on mount, zero layout shift.
+  - **F2.3:** `components/verid/VeridBanner.tsx` — caution band, dark instrument rectangle, signal chips (max 4 + overflow), expandable disclosure with explanation + confidence sentence.
+  - **F2.4:** `components/verid/VeridBlocker.tsx` — block band modal, fires on Buy click, scrim darkens marketplace, focus trap, Escape → Go back, Proceed anyway always present.
+  - **VeridScanner:** `components/verid/VeridScanner.tsx` — fires `extractPageData()` + `POST /api/analyze` on mount, 400ms minimum scan duration, any failure → unknown state, never crashes the page.
+  - **BuyRegion:** `components/verid/BuyRegion.tsx` — client wrapper owning the buy interaction: banner above, badge beside button, Buy click intercepted for block band.
+  - **Listing page updated:** `VeridScanner`, `VeridBlocker`, `BuyRegion` all mounted. `VeridProvider` wraps the page.
+  - **Tailwind updated:** Verid colour tokens (`verid-surface`, `verid-border`, `verid-text`, `verid-text-dim`, `verid-clear`, `verid-caution`, `verid-block`, `verid-unknown`), Verid font families, `verid-pulse` keyframe.
+  - **Layout updated:** Space Grotesk + DM Sans loaded as `--font-verid-head` / `--font-verid-body`.
 - **Frontend Phase 1 done (F1.1–F1.3).** `frontend/` scaffolded: Next.js 15 App Router + Tailwind v3 + TS `strict`. `next build` is clean under strict; all three listing routes prerender via `generateStaticParams`.
   - **F1.1:** `context/VeridProvider.tsx` — `{ status, verdict, blockerOpen }` + setters, logs default state on mount. Shared types imported from `@shared/types` (type-only, tsconfig path alias). No local redeclaration of the contract.
   - **F1.2:** `lib/seed-listings.ts` — three listings, each hand-computed against the weights table (math in the file): clean **0** (Aso-Oke throw), caution **43** (teak lounge chair — reproduces the ui-context worked example: new_account 15 + price_anomaly 18 + vague_description 10, ×1.00), block **100** (iPhone scam — all three layers, rawSum 132 ×1.25 → capped 100). Review `author` is a display-only field, absent from `AnalyzeRequest`.
@@ -43,9 +53,9 @@ Phase 1, 2, and 3 backend complete. All 5 scoring tests pass. Route fully wired.
 
 ## Next up
 
-**Emmanuel — next:** B3.3 — deploy to Render/Railway, set env vars, write README. Then integration with Ashiah (F3.1/F3.2).
+**Emmanuel — next:** B3.3 — deploy to Render/Railway, set env vars, write README.
 
-**Ashiah — next:** Frontend Phase 1 (F1.1–F1.3) is complete and builds clean. Start **Unit F2.1** (extraction utility) — read the DOM via `data-verid-target` only, strip review author names. The seeds are hand-verified to hit distinct bands; the `data-verid-*` hooks and the `data-verid-median` / `data-verid-value` machine attributes are already in place to read against.
+**Ashiah — next:** F3.1/F3.2 are wired. Set `NEXT_PUBLIC_VERID_API_URL` in `.env.local`, run both servers, open all three seeded listings and verify clear/caution/block bands fire end-to-end.
 
 ---
 

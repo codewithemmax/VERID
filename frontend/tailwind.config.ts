@@ -29,10 +29,25 @@ const config: Config = {
         violet: "#6D3BF5",
         cyan: "#12B5C9",
         cobalt: "#2547E8",
+        // Verid overlay tokens — cold instrument, never used in marketplace
+        verid: {
+          surface: "#0F1115",
+          "surface-alt": "#1A1D24",
+          border: "#2A2F3A",
+          text: "#E8EAED",
+          "text-dim": "#9AA0AA",
+          clear: "#22C55E",
+          caution: "#F59E0B",
+          block: "#EF4444",
+          unknown: "#6B7280",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "system-ui", "sans-serif"],
         body: ["var(--font-body)", "system-ui", "sans-serif"],
+        // Verid overlay typefaces — never used in marketplace components
+        "verid-head": ["var(--font-verid-head)", "system-ui", "sans-serif"],
+        "verid-body": ["var(--font-verid-body)", "system-ui", "sans-serif"],
       },
       borderRadius: {
         card: "1.25rem",
@@ -46,9 +61,14 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-14px)" },
         },
+        "verid-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.35" },
+        },
       },
       animation: {
         "float-slow": "float-slow 7s ease-in-out infinite",
+        "verid-pulse": "verid-pulse 1.4s ease-in-out infinite",
       },
     },
   },

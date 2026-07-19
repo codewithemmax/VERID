@@ -53,7 +53,7 @@ Commit format: `feat(B#.#): short description`
   - If B2.0 showed token usage running close to the 8K TPM ceiling, cap images at 2–3 per request or downsize before sending the URL, rather than risking a live 429.
   - **Verify:** a real seeded payload returns parseable JSON matching the Zod schema, with logged token usage comfortably under 8,000.
 
-- [x] **Unit B2.1b: Hybrid-call path (if the gate fails)**
+- [x] **Unit B2.1b: Hybrid-call path (if the gate fails)**ö
   - `src/ai/groq-client.ts` — text-only call to `process.env.GROQ_MODEL_TEXT`, default `openai/gpt-oss-120b`, for description + reviews.
   - `src/ai/gemini-client.ts` — single call to `process.env.GEMINI_MODEL`, default `gemini-3.5-flash`, for images only (`image_synthetic` alone).
   - Both fired via `Promise.all`, **concurrent, not sequential** — this is what keeps the hybrid path inside the latency budget.

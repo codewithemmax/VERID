@@ -38,23 +38,23 @@ Every unit has a **Verify** line. If you cannot demonstrate the verify condition
 
 The marketplace becomes real: email/password auth, sellers post products, listings live in Supabase. The three crafted seeds become DB rows. See `project-overview.md` (SCOPE EXPANSION) and `architecture.md` (Storage §A) for the reframed privacy pitch and the schema. This phase sits between the static marketplace (Phase 1) and the Verid overlay (Phase 2); the overlay does not care where a listing came from.
 
-- [ ] **Unit F1.4: Supabase wiring + schema**
+- [x] **Unit F1.4: Supabase wiring + schema**
   - Add `@supabase/supabase-js`. `lib/supabase/browser.ts` (anon key, client session) and `lib/supabase/server.ts` (anon key, server reads). Service-role key is used **only** in `scripts/seed.ts`, never in app code or the bundle.
   - Env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (client-safe); `SUPABASE_SERVICE_ROLE_KEY` (seed script only). `.env.local` is gitignored; ship `.env.local.example`.
   - Apply `supabase/migrations/0001_marketplace.sql`: `profiles`, `listings`, RLS policies, and the `auth.users` → `profiles` trigger.
   - **Verify:** the app reads an empty `listings` table without error; RLS blocks a write from an anonymous client.
 
-- [ ] **Unit F1.5: DB-backed marketplace + seed the demo rows**
+- [x] **Unit F1.5: DB-backed marketplace + seed the demo rows**
   - `lib/listings.ts` — `getAllListings()` / `getListingById(id)` read from Supabase (listing joined to profile) and map rows to the shared `Listing` type the components already consume. Home + `/listing/[id]` read from here, not from `seed-listings.ts`.
   - `scripts/seed.ts` (service role) — create three demo seller accounts, insert their profiles with back-dated `created_at` for the crafted ages, insert the three listings from `seed-listings.ts`. Idempotent (safe to re-run).
   - **Verify:** after seeding, all three demo listings render from the DB at `/listing/[id]` and still hand-compute to clear / caution / block.
 
-- [ ] **Unit F1.6: Email/password auth**
+- [x] **Unit F1.6: Email/password auth**
   - `context/AuthProvider.tsx` (client) — wraps Supabase auth session, exposes `{ user, signUp, signIn, signOut }`. Header shows login state.
   - `/signup` and `/login` pages. Sign-up collects a `display_name` (written to the profile). Friendly error messages, no raw Supabase errors leaked to the UI.
   - **Verify:** sign up a new user, log out, log back in. A `profiles` row exists for them with `review_count = 0`, `verified = false`.
 
-- [ ] **Unit F1.7: Post a product**
+- [x] **Unit F1.7: Post a product**
   - `/sell` page, gated to signed-in users (redirect to `/login` otherwise). Form: title, subtitle, category, condition, location, description, price, image URLs (one per line, 1–5). `category_median_price` from a `CATEGORY_MEDIANS` map, fallback = price.
   - Insert into `listings` with `seller_id = auth.uid()`. On success, redirect to the new listing.
   - **Verify:** a signed-in user posts a product; it appears on the home grid and its own `/listing/[id]`; Verid analyses it end-to-end in Phase 3 like any other listing. A brand-new seller's listing correctly reads as a new account (age < 14, 0 reviews).
@@ -65,27 +65,27 @@ The marketplace becomes real: email/password auth, sellers post products, listin
 
 Do not wait for the backend. Hardcode `AnalyzeResponse` objects and build all four states now.
 
-- [ ] **Unit F2.1: Extraction utility**
+- [x] **Unit F2.1: Extraction utility**
   - `lib/extract-page-data.ts` → `extractPageData(): AnalyzeRequest`.
   - Reads DOM via `data-verid-target` only. Never CSS classes, never `id`.
   - **Strips review author names.** They are never read into the payload. This is a privacy requirement from `architecture.md`, not a preference — the whole "no PII" pitch depends on it.
   - **Verify:** console-log the return on each listing. It type-checks as `AnalyzeRequest`, contains no author names, and matches the seed data exactly.
 
-- [ ] **Unit F2.2: Scanning + Clear + Unknown states**
+- [x] **Unit F2.2: Scanning + Clear + Unknown states**
   - `VeridBadge` — grey pulsing dot → green shield / grey dash.
   - Reserve the badge's space on mount. **Zero layout shift.**
   - 400ms minimum scanning duration even on a faster response (see `ui-context.md`).
   - Unknown state renders grey, never green.
   - **Verify:** toggle hardcoded verdicts; badge transitions correctly; the Buy button does not move by a single pixel at any point.
 
-- [ ] **Unit F2.3: Caution banner (31–85)**
+- [x] **Unit F2.3: Caution banner (31–85)**
   - `VeridBanner` — amber, inserts above Buy, pushes content down.
   - Signal chips from `verdict.signals`, weight-ordered, max 4 then `+N more`.
   - Expandable disclosure: `explanation` + per-signal detail. Confidence sentence inline.
   - Buy button stays enabled and unchanged.
   - **Verify:** renders from a hardcoded caution verdict; disclosure expands; Buy still clicks through. This component is the demo's money shot — give it the most polish of anything you build.
 
-- [ ] **Unit F2.4: Blocker modal (86–100)**
+- [x] **Unit F2.4: Blocker modal (86–100)**
   - `VeridBlocker` — scrim + blur, red rule, plain-English signal bullets.
   - **Fires on Buy click, not on mount.**
   - Buttons: `Go back` (solid red, primary) / `Report this listing` (secondary) / `Proceed anyway` (dim text link).
