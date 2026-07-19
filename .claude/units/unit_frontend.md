@@ -1,118 +1,113 @@
-# Verid Frontend — Implementation Units
+# Verid Extension — Implementation Units
 
-**Owner:** Ashiah
-**Last revised:** 15 July 2026 — **4 days to deadline**
+**Last revised:** 19 July 2026
 
 One unit at a time. Complete and verify before starting the next.
-Commit format: `feat(F#.#): short description`
+Commit format: `feat(E#.#): short description`
 
-Every unit has a **Verify** line. If you cannot demonstrate the verify condition, the unit is not done, regardless of how much code exists.
-
----
-
-## Phase 1 — Host marketplace
-
-- [x] **Unit F1.1: Scaffold**
-  - Next.js 15 (App Router) + Tailwind + TypeScript strict.
-  - Import the shared `AnalyzeRequest` / `AnalyzeResponse` types from `shared/types.ts`. Do not redeclare them locally — that is how a contract drifts.
-  - `VeridProvider` context: `{ status: 'idle'|'scanning'|'done'|'failed', verdict: AnalyzeResponse|null, blockerOpen: boolean }`.
-  - **Verify:** app builds clean under `strict: true`; provider default state logs on mount.
-
-- [x] **Unit F1.2: Seed data**
-  - `lib/seed-listings.ts` — three listings. Every field in `AnalyzeRequest` must be present, including `sellerAccountAgeDays`, `sellerRating`, `sellerVerified`, `categoryMedianPrice`.
-  - Reverse-engineer the seeds from the five worked cases in `architecture.md`. The clean listing must score in 0–30. The caution listing must land in 31–85. The high-risk listing must exceed 86 **through all three layers** — new account + off-platform contact + stock photo + price anomaly + templated reviews. If the high-risk listing only trips two layers, the multiplier holds it under 86 and your demo has no blocker.
-  - Reviews: 5 per listing. The high-risk set must be visibly templated — same sentence skeleton, same cadence, posted inside 48 hours. Write these by hand; make them look like real fake reviews, not like lorem ipsum.
-  - **Verify:** hand-compute each seed's score against the weights table. All three land in their intended bands. Do this on paper before writing the backend. If the seeds don't produce three distinct bands, nothing downstream works.
-
-- [x] **Unit F1.3: Marketplace UI**
-  - `components/marketplace/` — `ProductGallery`, `ProductDetails`, `SellerCard`, `ReviewSection`, `BuyButton`.
-  - **Vibrant expressive design** per the marketplace design system in `ui-context.md`: `Bricolage Grotesque` + `Manrope`, the magenta/violet/cyan palette on warm ivory, playful geometry, energetic layout. Build it with intent — it is the host, not the hero, so respect the effort budget (get type, color, and one strong hero listing layout right; do not gold-plate every card).
-  - **The marketplace must not touch the status hues.** No green / amber / orange / red as a brand color anywhere — those belong to Verid alone (see the color rule in `ui-context.md`). Buy button is magenta.
-  - **No Verid typefaces here.** Space Grotesk and DM Sans are Verid's tell; the marketplace never renders in them.
-  - Every extraction target carries `data-verid-target="..."`: `title`, `price`, `description`, `seller-age`, `seller-rating`, `seller-reviews`, `images`, `reviews`. Styling is expressive, but extraction hooks are on `data-verid-target` only — never tie extraction to a class that visual polish will later change.
-  - **Verify:** all three seeded listings render at `/listing/[id]` and look like a real, vibrant marketplace. `document.querySelectorAll('[data-verid-target]')` returns every field. No status-hue (green/amber/red) pixels anywhere except Verid components.
+The mock marketplace (frontend/) is complete and retained as a fallback demo. No further work needed there. All new work is in `extension/`.
 
 ---
 
-## Phase 1B — Accounts & seller-posted listings (scope expansion, 15 July)
+## Phase 1 — Extension scaffold
 
-The marketplace becomes real: email/password auth, sellers post products, listings live in Supabase. The three crafted seeds become DB rows. See `project-overview.md` (SCOPE EXPANSION) and `architecture.md` (Storage §A) for the reframed privacy pitch and the schema. This phase sits between the static marketplace (Phase 1) and the Verid overlay (Phase 2); the overlay does not care where a listing came from.
+- [ ] **Unit E1.1: Manifest + project setup**
+  - `extension/manifest.json` — Chrome MV3.
+  - `host_permissions`: `*://*.jumia.com.ng/*`, `*://*.jumia.com/*`, `*://*.temu.com/*`
+  - `permissions`: `activeTab`, `scripting`, `storage`
+  - Content script registered for Jumia + Temu listing URL patterns.
+  - Background service worker registered.
+  - Popup registered.
+  - `extension/tsconfig.json` — strict, no path aliases (extension has no Next.js resolver).
+  - `extension/package.json` — build script using `esbuild` or `tsc`. No webpack, no bundler complexity.
+  - **Verify:** extension loads in Chrome (`chrome://extensions` → Load unpacked). No manifest errors. Icon appears in toolbar.
 
-- [x] **Unit F1.4: Supabase wiring + schema**
-  - Add `@supabase/supabase-js`. `lib/supabase/browser.ts` (anon key, client session) and `lib/supabase/server.ts` (anon key, server reads). Service-role key is used **only** in `scripts/seed.ts`, never in app code or the bundle.
-  - Env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (client-safe); `SUPABASE_SERVICE_ROLE_KEY` (seed script only). `.env.local` is gitignored; ship `.env.local.example`.
-  - Apply `supabase/migrations/0001_marketplace.sql`: `profiles`, `listings`, RLS policies, and the `auth.users` → `profiles` trigger.
-  - **Verify:** the app reads an empty `listings` table without error; RLS blocks a write from an anonymous client.
-
-- [x] **Unit F1.5: DB-backed marketplace + seed the demo rows**
-  - `lib/listings.ts` — `getAllListings()` / `getListingById(id)` read from Supabase (listing joined to profile) and map rows to the shared `Listing` type the components already consume. Home + `/listing/[id]` read from here, not from `seed-listings.ts`.
-  - `scripts/seed.ts` (service role) — create three demo seller accounts, insert their profiles with back-dated `created_at` for the crafted ages, insert the three listings from `seed-listings.ts`. Idempotent (safe to re-run).
-  - **Verify:** after seeding, all three demo listings render from the DB at `/listing/[id]` and still hand-compute to clear / caution / block.
-
-- [x] **Unit F1.6: Email/password auth**
-  - `context/AuthProvider.tsx` (client) — wraps Supabase auth session, exposes `{ user, signUp, signIn, signOut }`. Header shows login state.
-  - `/signup` and `/login` pages. Sign-up collects a `display_name` (written to the profile). Friendly error messages, no raw Supabase errors leaked to the UI.
-  - **Verify:** sign up a new user, log out, log back in. A `profiles` row exists for them with `review_count = 0`, `verified = false`.
-
-- [x] **Unit F1.7: Post a product**
-  - `/sell` page, gated to signed-in users (redirect to `/login` otherwise). Form: title, subtitle, category, condition, location, description, price, image URLs (one per line, 1–5). `category_median_price` from a `CATEGORY_MEDIANS` map, fallback = price.
-  - Insert into `listings` with `seller_id = auth.uid()`. On success, redirect to the new listing.
-  - **Verify:** a signed-in user posts a product; it appears on the home grid and its own `/listing/[id]`; Verid analyses it end-to-end in Phase 3 like any other listing. A brand-new seller's listing correctly reads as a new account (age < 14, 0 reviews).
+- [ ] **Unit E1.2: Shared types bridge**
+  - `extension/src/shared/types.ts` — copy (not symlink) of the relevant types from `shared/types.ts`. Extensions can't use tsconfig path aliases or monorepo imports at runtime.
+  - Types needed: `AnalyzeRequest`, `AnalyzeResponse`, `Signal`, `DEGRADED_RESPONSE`.
+  - **Verify:** `tsc --noEmit` passes on the extension package.
 
 ---
 
-## Phase 2 — Verid overlay (build against hardcoded verdicts)
+## Phase 2 — Extraction
 
-Do not wait for the backend. Hardcode `AnalyzeResponse` objects and build all four states now.
+- [ ] **Unit E2.1: JSON-LD tier**
+  - `extension/src/content/extract.ts` — `extractFromJsonLd(): Partial<AnalyzeRequest>`.
+  - Parse `<script type="application/ld+json">`. Handle `schema.org/Product` shape.
+  - Extract: `title`, `price`, `description`, `images[]`, `reviews[]`.
+  - Return only fields that were present — never fill missing fields with defaults here.
+  - **Verify:** open a Jumia listing, run `extractFromJsonLd()` in the console (injected via content script). Log the result. Title, price, description should all be present.
 
-- [x] **Unit F2.1: Extraction utility**
-  - `lib/extract-page-data.ts` → `extractPageData(): AnalyzeRequest`.
-  - Reads DOM via `data-verid-target` only. Never CSS classes, never `id`.
-  - **Strips review author names.** They are never read into the payload. This is a privacy requirement from `architecture.md`, not a preference — the whole "no PII" pitch depends on it.
-  - **Verify:** console-log the return on each listing. It type-checks as `AnalyzeRequest`, contains no author names, and matches the seed data exactly.
+- [ ] **Unit E2.2: DOM selector tier**
+  - `extractFromDom(): Partial<AnalyzeRequest>` — fills fields JSON-LD missed.
+  - Every selector in try/catch. A failed selector returns undefined for that field, never throws.
+  - Extract: seller name, seller store link presence (`sellerHasStorePage`), seller listing count (`sellerListingCount`), review bodies + ratings, additional images.
+  - `sellerHasStorePage`: `!!document.querySelector('a[href*="/shop/"]')` — adjust selector after testing on real Jumia page.
+  - `sellerListingCount`: parse text near seller name matching `/(\d+)\s+products?/i`, default 0.
+  - **Verify:** on a Jumia listing, the DOM tier fills seller fields that JSON-LD missed. Log the merged result.
 
-- [x] **Unit F2.2: Scanning + Clear + Unknown states**
-  - `VeridBadge` — grey pulsing dot → green shield / grey dash.
-  - Reserve the badge's space on mount. **Zero layout shift.**
-  - 400ms minimum scanning duration even on a faster response (see `ui-context.md`).
-  - Unknown state renders grey, never green.
-  - **Verify:** toggle hardcoded verdicts; badge transitions correctly; the Buy button does not move by a single pixel at any point.
-
-- [x] **Unit F2.3: Caution banner (31–85)**
-  - `VeridBanner` — amber, inserts above Buy, pushes content down.
-  - Signal chips from `verdict.signals`, weight-ordered, max 4 then `+N more`.
-  - Expandable disclosure: `explanation` + per-signal detail. Confidence sentence inline.
-  - Buy button stays enabled and unchanged.
-  - **Verify:** renders from a hardcoded caution verdict; disclosure expands; Buy still clicks through. This component is the demo's money shot — give it the most polish of anything you build.
-
-- [x] **Unit F2.4: Blocker modal (86–100)**
-  - `VeridBlocker` — scrim + blur, red rule, plain-English signal bullets.
-  - **Fires on Buy click, not on mount.**
-  - Buttons: `Go back` (solid red, primary) / `Report this listing` (secondary) / `Proceed anyway` (dim text link).
-  - Focus trap. `Escape` → `Go back`.
-  - **Verify:** clicking Buy on a hardcoded block verdict fires the modal; Tab cannot escape it; `Proceed anyway` reaches checkout.
+- [ ] **Unit E2.3: Screenshot tier + merge**
+  - `extension/src/background/service-worker.ts` — message handler for `CAPTURE_SCREENSHOT`. Calls `chrome.tabs.captureVisibleTab()`, returns base64 data URL.
+  - `extension/src/content/extract.ts` — `captureScreenshot(): Promise<string | null>`. Sends message to background, receives data URL.
+  - `mergeExtraction(jsonLd, dom, screenshot): AnalyzeRequest` — merges all three tiers. JSON-LD wins over DOM for the same field. Screenshot data URL appended to `images[]`. Missing required fields filled with safe defaults (empty string, 0, false).
+  - **Verify:** `mergeExtraction()` returns a valid `AnalyzeRequest` shape on a Jumia listing. No TypeScript errors. Screenshot data URL present in `images`.
 
 ---
 
-## Phase 3 — Wire
+## Phase 3 — Overlay UI
 
-- [ ] **Unit F3.1: Live API**
-  - `useEffect` on listing mount → `extractPageData()` → `POST /api/analyze` → set verdict.
-  - `AbortController`, 5000ms client timeout (backend budget is 4000ms; leave headroom).
-  - Any failure → unknown state. Never a React error boundary over the page.
-  - **Verify:** kill the backend mid-demo. The listing page still works and shows grey. Do this test — a crashed demo in front of judges ends the pitch, and this is the only line of defence.
+- [ ] **Unit E3.1: Overlay scaffold + scanning state**
+  - `extension/src/content/overlay.ts` — creates `#verid-overlay-root` div, appends to `document.body`.
+  - `extension/styles/overlay.css` — all blue/white design tokens from `ui-context.md`. Scoped to `#verid-overlay-root`.
+  - Scanning state: small pill, bottom-right, blue border, pulsing dots, "Checking listing…"
+  - Space reserved on mount — overlay position is fixed, never causes layout shift.
+  - **Verify:** overlay appears on a Jumia listing page immediately on load. Does not shift any marketplace content. Pulse animation runs.
 
-- [ ] **Unit F3.2: Band routing**
-  - Route `verdict.band` to the correct component. Read the band from the response; do not re-derive it from the score on the client. One source of truth, and it is the backend.
-  - **Verify:** all three seeded listings hit the live backend and produce their intended bands end to end.
+- [ ] **Unit E3.2: Clear + Unknown states**
+  - Clear: green shield badge, collapses after 3s, tooltip on hover.
+  - Unknown: grey dash, "Couldn't check this listing." Never green on failure.
+  - 400ms minimum scanning display even on fast response.
+  - **Verify:** hardcode a clear verdict → green badge. Hardcode null → grey dash. Badge never causes layout shift.
+
+- [ ] **Unit E3.3: Caution panel**
+  - Caution: 320px panel, amber top strip, signal chips, expandable disclosure.
+  - Signal chips from `verdict.signals`, max 4 visible + overflow count.
+  - Disclosure: `explanation` + confidence sentence.
+  - **Verify:** hardcode a caution verdict. Panel renders. Disclosure expands. Marketplace Buy button is NOT intercepted in caution state.
+
+- [ ] **Unit E3.4: Block modal**
+  - Content script intercepts clicks on buy/checkout elements: `[data-qa*="buy"]`, `button[class*="buy"]`, `button[class*="cart"]`, `a[class*="checkout"]` — test on real Jumia page and adjust.
+  - On intercept: prevent default, fire modal.
+  - Modal: scrim, white panel, red top rule, explanation, signal bullets, three buttons.
+  - Focus trap. Escape → Go back. "Proceed anyway" closes modal and re-fires the original click.
+  - **Verify:** hardcode a block verdict. Click Add to Cart on Jumia. Modal fires. Tab stays trapped. Escape closes. Proceed anyway completes the add-to-cart.
 
 ---
 
-## Cut list — drop in this order if Saturday night is going badly
+## Phase 4 — Wire + Popup
 
-1. `Report this listing` button → make it a no-op that closes the modal.
-2. `+N more` chip overflow → just render all signals.
-3. Confidence sentence → keep it. It is 20 minutes and it answers a judging criterion. Cut something else.
-4. Marketplace visual polish → cut back to the **clean vibrant baseline** (cohesive type + color + one strong listing layout). Do not gold-plate every card, but do not fall back to system-font gray either — the baseline is beautiful by design. Cut the fussy extras, keep the vibe.
+- [ ] **Unit E4.1: Live API call**
+  - `extension/src/content/index.ts` — on page load: extract → POST to `VERID_API_URL` → render verdict.
+  - `VERID_API_URL` from `chrome.storage.sync` or hardcoded to deployed backend URL.
+  - `AbortController`, 5000ms timeout.
+  - Any failure → unknown state. Never crashes the page.
+  - **Verify:** open a Jumia listing with the backend running. Verdict renders. Kill the backend — unknown state renders, page still works.
 
-**Never cut:** the three-band routing, the extraction utility, or the failure state. Those are the product.
+- [ ] **Unit E4.2: Popup**
+  - `extension/src/popup/popup.ts` — reads last verdict from `chrome.storage.local`, renders it.
+  - Shows: site name, score, band, top 3 signals, "Scan this page" button, on/off toggle.
+  - "Scan this page" sends a message to the content script to re-run extraction + analysis.
+  - On/off toggle stored in `chrome.storage.sync`. Content script checks it on load.
+  - **Verify:** popup opens, shows last verdict. Toggle off → overlay disappears on next page load. Scan button triggers a fresh analysis.
+
+---
+
+## Cut list — drop in this order if time runs out
+
+1. Temu selectors → Jumia only for the demo.
+2. Popup "Scan this page" button → popup is display-only.
+3. On/off toggle → always on.
+4. Screenshot tier → JSON-LD + DOM only, pass empty screenshot.
+5. Block modal buy-click interception → modal fires on a dedicated "Check this listing" button in the overlay instead.
+
+**Never cut:** the three-band overlay states, the extraction pipeline, the failure state.
