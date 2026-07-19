@@ -31,6 +31,8 @@ Backend Phase 1–3 complete. Frontend Phase 1, 1B, and 2 complete. All 5 scorin
 - **B2.2 done.** `src/ai/prompts.ts` — `buildAnalysisPrompt()` template. Explicit key names and types in the prompt body (Groq JSON mode is a request, not a schema guarantee). Prompt instructs model to avoid rounding to 0/1 unless unambiguous.
 - **B2.3 done.** `src/ai/computed-signals.ts` — `computePriceDeviationRatio()` and `computeReviewBurstRatio()`. Pure arithmetic, no AI.
 - **Assembler done.** `src/ai/assemble-signals.ts` — `assembleSignals(req, modelSignals)` merges model output + computed signals + account fields into `SignalInput`. Neutral fallback values when model returns null (low-confidence path).
+- **Brevo email verification done.** `backend/src/routes/email-verify.ts` — two endpoints: `POST /api/auth/send-code` (generates 6-digit code, stores in-memory with 10-min TTL, sends via Brevo Transactional Email) and `POST /api/auth/verify-code` (checks code, deletes on success). Signup page rewritten as a two-step flow: step 1 collects name/email/password and sends the code; step 2 takes the code input, verifies against the backend, then creates the Supabase account. Brevo key is server-side only (`BREVO_API_KEY` in backend `.env`). Sender: `olayinkaemma27@gmail.com`.
+
 - **B3.1 done.** Route fully wired: validate → `extractSignals()` → `assembleSignals()` → `scoreListing()` → `buildExplanation()` → fire-and-forget `logVerdict()` → respond. AI failure → degraded 200, never 503.
 - **B3.2 done.** `src/ai/build-explanation.ts` — plain-language sentence templated from fired signals. No second AI call.
 - **Frontend Phase 2 done (F2.1–F2.4 + wiring).**

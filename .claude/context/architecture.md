@@ -9,7 +9,8 @@
 | Layer | Technology | Role |
 |---|---|---|
 | Frontend | Next.js 15 + Tailwind | Mock marketplace host + Verid overlay components |
-| Backend | Node.js + Express + TypeScript | Single analyse route: extract → score → respond |
+| Backend | Node.js + Express + TypeScript | Single analyse route + email verification route |
+| Email | Brevo Transactional Email API | 6-digit OTP verification on signup |
 | AI | Groq (OpenAI-compatible API) | Text signal extraction, cheap and fast. Vision path gated — see below. |
 | Scoring | In-process TypeScript module | Weighted heuristics. No Python, no external service. |
 | Database | Supabase (Postgres) | Anonymised signal vectors only |
