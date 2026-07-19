@@ -21,13 +21,18 @@ import { SEED_LISTINGS, SEED_SELLERS } from "../lib/seed-listings";
 // --- tiny .env.local loader (no dotenv dependency) -------------------------
 function loadEnvLocal(): void {
   const here = dirname(fileURLToPath(import.meta.url));
-  const envPath = resolve(here, "..", ".env.local");
+  const envLocalPath = resolve(here, "..", ".env.local");
+  const envPath = resolve(here, "..", ".env");
   let raw: string;
   try {
-    raw = readFileSync(envPath, "utf8");
+    raw = readFileSync(envLocalPath, "utf8");
   } catch {
-    console.error(`Missing ${envPath}. Copy .env.local.example and fill it in.`);
-    process.exit(1);
+    try {
+      raw = readFileSync(envPath, "utf8");
+    } catch {
+      console.error(`Missing ${envLocalPath} (and no .env fallback found). Copy .env.local.example and fill it in.`);
+      process.exit(1);
+    }
   }
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();
